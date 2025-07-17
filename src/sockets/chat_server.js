@@ -4,12 +4,12 @@ import { onSocketPreError , onSocketPostError} from './helpers/ws_error_handler.
 import { handle_socket_connect } from "./controller/chat_socket.controller.js";
 
 export const wss = new WebSocketServer({ noServer: true });
+export const online_users = new Map();
 
 export const handle_socket_upgrade = (server) => {
   server.on("upgrade", (req, socket, head) => {
   socket.on("error", onSocketPreError);
   
-
     const payload = verify_socket_token(req, socket)
 
     if(!payload) return;
@@ -22,6 +22,7 @@ export const handle_socket_upgrade = (server) => {
 });
 
 wss.on("connection", (ws, req) => {
+  online_users.set(req.user.id, ws);
   handle_socket_connect(ws, req, wss)
 });
 }

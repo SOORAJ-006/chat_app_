@@ -1,5 +1,7 @@
+import { WebSocket } from "ws";
 import Conversation from "../models/conversation.models.js";
 import Message from "../models/message.models.js";
+import { online_users } from "../sockets/chat_server.js";
 import { handle_response } from "../utils/centralized_response_handler.utils.js";
 
 export const createPrivateConversation = async (req, res, next) => {
@@ -23,6 +25,21 @@ export const createPrivateConversation = async (req, res, next) => {
       type: "private",
       participants: [userId1, userId2],
     });
+
+    const client = online_users.get(userId2);
+    console.log("client : " , client);
+    
+    if(client && client.readyState === WebSocket.OPEN) {
+
+      try {
+        client.send(JSON.stringify({
+          type: "conversation:new",
+          newConversation: newConversation.toObject()
+        }));
+      } catch (sendErr) {
+        console.error(" Failed to notify user over WebSocket:", sendErr.message);
+      }
+    }
 
     handle_response(res, 201, "Conversation created", newConversation);
   } catch (err) {
